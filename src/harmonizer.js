@@ -10,6 +10,7 @@ function Harmonizer() {
   this._frameDestinations = [];
 
   this._parent = null;
+  this._children = [];
 
   this._animationState = ANIMATION_STOPPED;
   this._animationStartTime = 0;
@@ -75,11 +76,12 @@ Harmonizer.prototype.requestPaint = function() {
   if (root._takesRepaintRequests) {
     root._needsRepaint = true;
   } else {
-    root.emit('paint');
+    root._propagatePaint();
   }
 };
 
 Harmonizer.prototype.appendChild = function(child) {
+  this._children.push(child);
   if (child._frameRetainCount() > 0) {
     child._frameSource._removeFrameDestination(child);
   }
@@ -91,6 +93,9 @@ Harmonizer.prototype.appendChild = function(child) {
 };
 
 Harmonizer.prototype.removeChild = function(child) {
+  var idx = this._children.indexOf(child);
+  assert(idx >= 0);
+  this._children.splice(idx, 1);
   if (child._frameRetainCount() > 0) {
     this._removeFrameDestination(child);
   }
@@ -135,7 +140,7 @@ Harmonizer.prototype._removeFrameDestination = function(dest) {
 };
 
 Harmonizer.prototype._handleFrame = function(time) {
-  this._takesRepaintRequests = (this._parent === null);
+  this._takesRepaintRequests = true;
   this._needsRepaint = false;
 
   if (this._animationState === ANIMATION_RUNNING) {
@@ -154,9 +159,29 @@ Harmonizer.prototype._handleFrame = function(time) {
   }
 
   if (this._needsRepaint) {
-    this.emit('paint');
+    this._propagatePaint();
   }
   this._takesRepaintRequests = false;
+};
+
+Harmonizer.prototype._propagatePaint = function() {
+  var tookRepaintRequests = this._takesRepaintRequests;
+  this._takesRepaintRequests = true;
+
+  this.emit('paint');
+
+  // Prevent new children from getting the paint callback.
+  var children = this._children.slice();
+  for (var i = 0, len = children.length; i < len; ++i) {
+    // Allow children to be removed during the propagation.
+    var child = children[i];
+    if (child._parent !== this) {
+      continue;
+    }
+    child._propagatePaint();
+  }
+
+  this._takesRepaintRequests = tookRepaintRequests;
 };
 
 Harmonizer.prototype._frameRetainCount = function() {
