@@ -9,7 +9,6 @@ function Harmonizer() {
   this._frameSource = this._rootFrameSource;
   this._frameDestinations = [];
 
-  this._children = [];
   this._parent = null;
 
   this._animationState = ANIMATION_STOPPED;
@@ -80,24 +79,22 @@ Harmonizer.prototype.requestPaint = function() {
 };
 
 Harmonizer.prototype.appendChild = function(child) {
-  this._children.push(child);
   if (child._frameRetainCount() > 0) {
     child._frameSource._removeFrameDestination(child);
   }
   child._frameSource = this;
+  child._parent = this;
   if (child._frameRetainCount() > 0) {
     this._addFrameDestination(child);
   }
 };
 
 Harmonizer.prototype.removeChild = function(child) {
-  var idx = this._children.indexOf(child);
-  assert(idx >= 0);
-  this._children.splice(idx);
   if (child._frameRetainCount() > 0) {
     this._removeFrameDestination(child);
   }
   child._frameSource = child._rootFrameSource;
+  child._parent = null;
   if (child._frameRetainCount() > 0) {
     child._frameSource._addFrameDestination(child);
   }
