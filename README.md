@@ -6,9 +6,9 @@ The simple `paint()` approach comes with one huge dilemma. If each component use
 
 # The solution
 
-While there are other solutions, the one provided by **harmony** is simple and elegant.
+While there are other solutions, the one provided by **harmonizer** is simple and elegant.
 
-At the root of **harmony** is the *Harmonizer*. Taken alone, a *Harmonizer* wraps `window.requestAnimationFrame()` and adds some extra features to it. For each *Harmonizer* there is one "animation", which you can start, stop, and pause at any time. While an animation is running, you receive events for each animation frame, allowing you to request paints accordingly.
+At the root of **harmonizer** is the *Harmonizer*. Taken alone, a *Harmonizer* wraps `window.requestAnimationFrame()` and adds some extra features to it. For each *Harmonizer* there is one "animation", which you can start, stop, and pause at any time. While an animation is running, you receive events for each animation frame, allowing you to request paints accordingly.
 
 The *Harmonizer* also implements a `requestPaint()` method. This method will look at the context in which it was called, noting if an animation frame is in progress or if one has been requested. In the end, the `requestPaint()` method will cause the *Harmonizer* to fire a 'paint' event, but the context will determine when that event is fired. One side effect is that multiple paint requests during one animation frame will only trigger one 'paint' event, solving one of the traditional problems with the `paint()` technique.
 

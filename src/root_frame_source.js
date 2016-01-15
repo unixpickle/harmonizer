@@ -5,8 +5,9 @@ function RootFrameSource() {
 }
 
 RootFrameSource.prototype._addFrameDestination = function(dest) {
-  assert(this._frameDestination !== null);
+  assert(this._frameDestination === null);
   assert(this._animationFrameRequest === null);
+  this._frameDestination = dest;
   this._animationFrameRequest = requestAnimationFrameOrPolyfill(this._boundCallback);
 };
 

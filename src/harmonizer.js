@@ -21,6 +21,7 @@ function Harmonizer() {
 }
 
 Harmonizer.prototype = Object.create(EventEmitter.prototype);
+Harmonizer.prototype.constructor = Harmonizer;
 
 Harmonizer.prototype.start = function() {
   switch (this._animationState) {
@@ -60,7 +61,7 @@ Harmonizer.prototype.pause = function() {
   case ANIMATION_STOPPED:
     break;
   case ANIMATION_RUNNING:
-    this._animationSkipTime = getCurrentTime() - this._animationStartTime;
+    this._animationSkipTime += getCurrentTime() - this._animationStartTime;
     this._animationState = ANIMATION_PAUSED;
     if (this._frameRetainCount() === 0) {
       this._frameSource._removeFrameDestination(this);
@@ -108,6 +109,13 @@ Harmonizer.prototype.spawnChild = function() {
   var res = new Harmonizer();
   this.appendChild(res);
   return res;
+};
+
+Harmonizer.prototype.makeSingleShot = function() {
+  this.on('animationFrame', function() {
+    this.stop();
+    this.requestPaint();
+  }.bind(this));
 };
 
 Harmonizer.prototype._addFrameDestination = function(dest) {
@@ -166,3 +174,5 @@ Harmonizer.prototype._rootHarmonizer = function() {
   }
   return root;
 };
+
+exports.Harmonizer = Harmonizer;
