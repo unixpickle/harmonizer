@@ -45,12 +45,27 @@ Harmonizer.prototype.requestPaint = function() {
 };
 
 Harmonizer.prototype.appendChild = function(child) {
-  // TODO: add the child and potentially hook it up to receive
-  // animation frames.
+  this._children.push(child);
+  if (child._frameRetainCount() > 0) {
+    child._frameSource._removeFrameDestination(child);
+  }
+  child._frameSource = this;
+  if (child._frameRetainCount() > 0) {
+    this._addFrameDestination(child);
+  }
 };
 
 Harmonizer.prototype.removeChild = function(child) {
-  // TODO: remove the child and potentially hook it up to its root frame source.
+  var idx = this._children.indexOf(child);
+  assert(idx >= 0);
+  this._children.splice(idx);
+  if (child._frameRetainCount() > 0) {
+    this._removeFrameDestination(child);
+  }
+  child._frameSource = child._rootFrameSource;
+  if (child._frameRetainCount() > 0) {
+    child._frameSource._addFrameDestination(child);
+  }
 };
 
 Harmonizer.prototype._addFrameDestination = function(dest) {
