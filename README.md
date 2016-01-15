@@ -1,3 +1,7 @@
+# Overview
+
+This file explains **harmonizer**'s purpose. It gives an overview of how **harmonizer** works and what you can do with it. If you want specifics on how to use **harmonizer**, see [USAGE.md](USAGE.md)
+
 # The problem
 
 Suppose you have a complex view system that draws into a `<canvas>`. You might have tooltips, animations, and various components that need to be drawn over or under each other in complex ways. The simplest way to implement something like this is to have a simple `paint()` method that repaints everything at once.
