@@ -19,3 +19,11 @@ By organizing *Harmonizers* in a tree, it is possible to create a complex hierar
 # Dependencies
 
 This depends on [eventemitter.js](https://github.com/unixpickle/eventemitter.js). It does not depend on `window.requestAnimationFrame()`, since said API can be polyfilled rather easily.
+
+# Building
+
+In order to build this, you will need some kind of shell and [jsbuild](https://github.com/unixpickle/jsbuild). Once you have these, simply run
+
+    $ sh build.sh
+
+This will generate a build directory which contains a `harmonizer.js` file. Make sure to import this before the eventemitter.js dependency.
