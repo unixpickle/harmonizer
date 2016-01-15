@@ -104,6 +104,12 @@ Harmonizer.prototype.getParent = function() {
   return this._parent;
 };
 
+Harmonizer.prototype.spawnChild = function() {
+  var res = new Harmonizer();
+  this.appendChild(res);
+  return res;
+};
+
 Harmonizer.prototype._addFrameDestination = function(dest) {
   this._frameDestinations.push(dest);
   if (this._frameRetainCount() === 1) {
