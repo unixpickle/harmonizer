@@ -24,15 +24,50 @@ function Harmonizer() {
 Harmonizer.prototype = Object.create(EventEmitter.prototype);
 
 Harmonizer.prototype.start = function() {
-  // TODO: start or resume the animation here.
+  switch (this._animationState) {
+  case ANIMATION_RUNNING:
+    return;
+  case ANIMATION_STOPPED:
+  case ANIMATION_PAUSED:
+    this._animationState = ANIMATION_RUNNING;
+    this._animationStartTime = getCurrentTime();
+    if (this._frameRetainCount() === 1) {
+      this._frameSource._addFrameDestination(this);
+    }
+  }
 };
 
 Harmonizer.prototype.stop = function() {
-  // TODO: stop the animation here.
+  switch (this._animationState) {
+  case ANIMATION_STOPPED:
+    break;
+  case ANIMATION_PAUSED:
+    this._animationSkipTime = 0;
+    this._animationState = ANIMATION_STOPPED;
+    break;
+  case ANIMATION_RUNNING:
+    this._animationSkipTime = 0;
+    this._animationState = ANIMATION_STOPPED;
+    if (this._frameRetainCount() === 0) {
+      this._frameSource._removeFrameDestination(this);
+    }
+    break;
+  }
 };
 
 Harmonizer.prototype.pause = function() {
-  // TODO: pause the animation here.
+  switch (this._animationState) {
+  case ANIMATION_PAUSED:
+  case ANIMATION_STOPPED:
+    break;
+  case ANIMATION_RUNNING:
+    this._animationSkipTime = getCurrentTime() - this._animationStartTime;
+    this._animationState = ANIMATION_PAUSED;
+    if (this._frameRetainCount() === 0) {
+      this._frameSource._removeFrameDestination(this);
+    }
+    break;
+  }
 };
 
 Harmonizer.prototype.requestPaint = function() {
@@ -66,6 +101,10 @@ Harmonizer.prototype.removeChild = function(child) {
   if (child._frameRetainCount() > 0) {
     child._frameSource._addFrameDestination(child);
   }
+};
+
+Harmonizer.prototype.getParent = function() {
+  return this._parent;
 };
 
 Harmonizer.prototype._addFrameDestination = function(dest) {
