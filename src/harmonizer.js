@@ -2,12 +2,10 @@ var ANIMATION_STOPPED = 0;
 var ANIMATION_RUNNING = 1;
 var ANIMATION_PAUSED = 2;
 
-function Harmonizer() {
+function Harmonizer(context) {
   EventEmitter.call(this);
 
-  this._rootFrameSource = new RootFrameSource();
-  this._frameSource = this._rootFrameSource;
-  this._frameDestinations = [];
+  this._context = context || exports.defaultContext;
 
   this._parent = null;
   this._children = [];
@@ -15,10 +13,6 @@ function Harmonizer() {
   this._animationState = ANIMATION_STOPPED;
   this._animationStartTime = 0;
   this._animationSkipTime = 0;
-
-  this._takesRepaintRequests = false;
-  this._propagatingPaint = false;
-  this._needsRepaint = false;
 }
 
 Harmonizer.prototype = Object.create(EventEmitter.prototype);
@@ -32,9 +26,8 @@ Harmonizer.prototype.start = function() {
   case ANIMATION_PAUSED:
     this._animationState = ANIMATION_RUNNING;
     this._animationStartTime = getCurrentTime();
-    if (this._frameRetainCount() === 1) {
-      this._frameSource._addFrameDestination(this);
-    }
+    this._context._addAnimatingHarmonizer(this);
+    break;
   }
 };
 
@@ -49,9 +42,7 @@ Harmonizer.prototype.stop = function() {
   case ANIMATION_RUNNING:
     this._animationSkipTime = 0;
     this._animationState = ANIMATION_STOPPED;
-    if (this._frameRetainCount() === 0) {
-      this._frameSource._removeFrameDestination(this);
-    }
+    this._context._removeAnimatingHarmonizer(this);
     break;
   }
 };
@@ -64,46 +55,32 @@ Harmonizer.prototype.pause = function() {
   case ANIMATION_RUNNING:
     this._animationSkipTime += getCurrentTime() - this._animationStartTime;
     this._animationState = ANIMATION_PAUSED;
-    if (this._frameRetainCount() === 0) {
-      this._frameSource._removeFrameDestination(this);
-    }
+    this._context._removeAnimatingHarmonizer(this);
     break;
   }
 };
 
 Harmonizer.prototype.requestPaint = function() {
   var root = this._rootHarmonizer();
-  if (root._takesRepaintRequests) {
-    root._needsRepaint = true;
+  if (this._context._inAnimationFrame()) {
+    this._context._addPaintHarmonizer(root);
   } else {
-    root._propagatePaint();
+    root._paint();
   }
 };
 
 Harmonizer.prototype.appendChild = function(child) {
+  assert(this._children.indexOf(child) < 0);
+  assert(child._context === this._context);
   this._children.push(child);
-  if (child._frameRetainCount() > 0) {
-    child._frameSource._removeFrameDestination(child);
-  }
-  child._frameSource = this;
   child._parent = this;
-  if (child._frameRetainCount() > 0) {
-    this._addFrameDestination(child);
-  }
 };
 
 Harmonizer.prototype.removeChild = function(child) {
   var idx = this._children.indexOf(child);
   assert(idx >= 0);
   this._children.splice(idx, 1);
-  if (child._frameRetainCount() > 0) {
-    this._removeFrameDestination(child);
-  }
-  child._frameSource = child._rootFrameSource;
   child._parent = null;
-  if (child._frameRetainCount() > 0) {
-    child._frameSource._addFrameDestination(child);
-  }
 };
 
 Harmonizer.prototype.getParent = function() {
@@ -111,7 +88,7 @@ Harmonizer.prototype.getParent = function() {
 };
 
 Harmonizer.prototype.spawnChild = function() {
-  var res = new Harmonizer();
+  var res = new Harmonizer(this._context);
   this.appendChild(res);
   return res;
 };
@@ -123,73 +100,13 @@ Harmonizer.prototype.makeSingleShot = function() {
   }.bind(this));
 };
 
-Harmonizer.prototype._addFrameDestination = function(dest) {
-  this._frameDestinations.push(dest);
-  if (this._frameRetainCount() === 1) {
-    this._frameSource._addFrameDestination(this);
-  }
-};
-
-Harmonizer.prototype._removeFrameDestination = function(dest) {
-  var idx = this._frameDestinations.indexOf(dest);
-  assert(idx >= 0);
-  this._frameDestinations.splice(idx, 1);
-  if (this._frameRetainCount() === 0) {
-    this._frameSource._removeFrameDestination(this);
-  }
-};
-
 Harmonizer.prototype._handleFrame = function(time) {
-  this._takesRepaintRequests = true;
-  this._needsRepaint = false;
-
-  if (this._animationState === ANIMATION_RUNNING) {
-    this.emit('animationFrame', time-this._animationStartTime+this._animationSkipTime);
-  }
-
-  // Prevent new destinations from getting callbacks for this animation frame.
-  var destinations = this._frameDestinations.slice();
-  for (var i = 0, len = destinations.length; i < len; ++i) {
-    // Allow destinations to be removed during the animation frame.
-    var dest = destinations[i];
-    if (this._frameDestinations.indexOf(dest) < 0) {
-      continue;
-    }
-    dest._handleFrame(time);
-  }
-
-  if (this._needsRepaint) {
-    this._propagatePaint();
-  }
-  this._takesRepaintRequests = false;
+  assert(this._animationState === ANIMATION_RUNNING);
+  this.emit('animationFrame', time-this._animationStartTime+this._animationSkipTime);
 };
 
-Harmonizer.prototype._propagatePaint = function() {
-  var tookRepaintRequests = this._takesRepaintRequests;
-  this._takesRepaintRequests = true;
-
+Harmonizer.prototype._paint = function() {
   this.emit('paint');
-
-  // Prevent new children from getting the paint callback.
-  var children = this._children.slice();
-  for (var i = 0, len = children.length; i < len; ++i) {
-    // Allow children to be removed during the propagation.
-    var child = children[i];
-    if (child._parent !== this) {
-      continue;
-    }
-    child._propagatePaint();
-  }
-
-  this._takesRepaintRequests = tookRepaintRequests;
-};
-
-Harmonizer.prototype._frameRetainCount = function() {
-  if (this._animationState === ANIMATION_RUNNING) {
-    return 1 + this._frameDestinations.length;
-  } else {
-    return this._frameDestinations.length;
-  }
 };
 
 Harmonizer.prototype._rootHarmonizer = function() {

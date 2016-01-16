@@ -11,23 +11,45 @@ To import **harmonizer**, you must follow the [build instructions](README.md#bui
 </head>
 ```
 
+# Getting a *Context*
+
+The API automatically creates a default *Context*. You can access this as follows:
+
+```js
+var context = window.harmonizer.defaultContext();
+```
+
+If you want to create a separate *Context*, you can do so like so:
+
+```js
+var context = new window.harmonizer.Context();
+```
+
 # Creating a *Harmonizer*
 
-Now, your scripts can create new harmonizers very simply:
+Your scripts can create new *Harmonizer* instances very simply:
 
 ```js
 var myHarmonizer = new window.harmonizer.Harmonizer();
 ```
 
-It is also possible to create a harmonizer that is automatically a child of another harmonizer. To do this, you may do:
+This will create a *Harmonizer* in the default *Context*. If you wish to create a *Harmonizer* in a specific *Context*, you can pass the context as a constructor argument:
+
+```js
+var myHarmonizer = new window.harmonizer.Harmonizer(context);
+```
+
+It is also possible to create a *Harmonizer* that is automatically a child of another *Harmonizer*. To do this, you may do:
 
 ```js
 var subHarmonizer = myHarmonizer.spawnChild();
 ```
 
+When you use `spawnChild()`, you do not need to specify the *Context* since a *Harmonizer* must have the same *Context* as its parent.
+
 # Animations
 
-Each harmonizer controls a single animation. After the animation is started, the harmonizer emits 'animationFrame' events periodically with a timestamp argument. The timestamp passed to 'animationFrame' specifies the number of milliseconds that have elapsed since the start of the animation. When an animation is paused and later resumed, this value is preserved so that it appears not to jump between pause and resume.
+Each *Harmonizer* controls a single animation. After the animation is started, the *Harmonizer* emits 'animationFrame' events periodically with a timestamp argument. The timestamp passed to 'animationFrame' specifies the number of milliseconds that have elapsed since the start of the animation. When an animation is paused and later resumed, this value is preserved so that it appears not to jump between pause and resume.
 
 The following methods on a *Harmonizer* can be used to control an animation:
 
@@ -50,9 +72,7 @@ Since such a handler is useful in a number of cases, there is a convenience meth
 
 # *Harmonizer* trees
 
-*Harmonizer* instances can be arranged into a tree. Naturally, a *Harmonizer* has one parent and can have multiple children. Excepting the root *Harmorizer*, each *Harmonizer* depends on its parent for animation frames. This is called self-reliant mode. When a *Harmonizer* is removed from a tree, it enters self-reliant mode since it no longer has a parent. When a *Harmonizer* is added to a tree, it leaves self-reliant mode.
-
-When a *Harmonizer* gets an animation frame, it emits an 'animationFrame' event. After this event has been fired, it notes all of its children and passes the 'animationFrame' to the children that need it. The order in which children receive events is not specified. If a child removes itself from the tree or stops its animation while an animation frame is propagating, it is guaranteed not to receive the animation frame. However, a *Harmonizer* which is added to a tree during a propagating animation frame will **not** receive the animation frame under any circumstances.
+*Harmonizer* instances can be arranged into a tree. Naturally, a *Harmonizer* has one parent and can have multiple children. Every *Harmonizer* in a tree has a common *Context*. Arranging *Harmonizer*s in a tree is useful for painting, as you will see in the [Painting](#painting) section.
 
 Here are the methods which allow you to modify the tree structure:
 
@@ -62,9 +82,9 @@ Here are the methods which allow you to modify the tree structure:
 
 # Painting
 
-Any *Harmonizer* can request a paint at any time. This request gets sent to the *Harmonizer*'s root parent and processed accordingly. If the root *Harmonizer* is busy propagating animation frames, it will note the request and emit a 'paint' event after the propagation is complete. If it is not busy, it will emit the 'paint' event immediately. After the root *Harmonizer* emits a 'paint' event, it propagates the event to its children, causing them to fire a 'paint' event as well and repeat the process.
+Any *Harmonizer* can request a paint at any time. This request gets sent to the *Harmonizer*'s root parent, called h<sub>root</sub>. If the *Context* is busy handling animation frames, h<sub>root</sub> will note the request and emit a 'paint' event when the animation frame is complete. If the *Context* is not busy, h<sub>root</sub> will emit the 'paint' event immediately.
 
-There are some edge cases to consider. If the root *Harmonizer* is in the middle of emitting its 'paint' event when a request comes in, it will ignore the request. If a *Harmonizer* requests a paint but is removed from the tree before the root finishes propagating the animation frame, then the root will still emit a 'paint' event and propagate it down, but the removed *Harmonizer* will not get it. If a *Harmonizer* requests a paint from its root, r<sub>1</sub>, and then that root is added to a bigger tree rooted at r<sub>2</sub> while r<sub>1</sub> is animating, then r<sub>1</sub> will emit a 'paint' event but r<sub>2</sub> will not. In general, a propagating *Harmonizer* will only emit a 'paint' event if it was the root node when the paint was requested.
+If a root *Harmonizer* receives a paint request while it is emitting a 'paint' event, it ignores the request.
 
 The method to request a paint is as follows:
 
