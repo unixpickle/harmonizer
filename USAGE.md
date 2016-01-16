@@ -25,6 +25,8 @@ If you want to create a separate *Context*, you can do so like so:
 var context = new window.harmonizer.Context();
 ```
 
+You will probably never need to create a separate *Context*, but there are some reasons you might do so. For instance, you might have a component in a web page whose DOM state reflects its internal state. In this case, a change to your internal state (via animation) should immediately update the DOM state (via a paint), before anything else in the application gets an animation frame.
+
 # Creating a *Harmonizer*
 
 Your scripts can create new *Harmonizer* instances very simply:
