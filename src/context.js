@@ -57,3 +57,4 @@ Context.prototype._animationFrame = function(time) {
 };
 
 exports.defaultContext = new Context();
+exports.Context = Context;
