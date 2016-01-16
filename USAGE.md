@@ -59,7 +59,7 @@ The following methods on a *Harmonizer* can be used to control an animation:
  * stop() - stop the current animation. If an animation is paused, it will be cancelled. If an animation is not running, this will have no effect.
  * pause() - pause the current animation. If no animation is running, this will have no effect.
 
-It is common to use a *Harmonizer*'s animation for single animation frames. For instance, one might use a *Harmonizer* to buffer mouse movements, starting the animation when the mouse moves and processing the event on the next paint. In this case, the 'animationFrame' handler might look something like this:
+It is common to use a *Harmonizer*'s animation to paint a view once on the next animation frame. In this case, the 'animationFrame' handler might look something like this:
 
 ```js
 harmonizer.on('animationFrame', function() {
@@ -70,7 +70,9 @@ harmonizer.on('animationFrame', function() {
 
 Since such a handler is useful in a number of cases, there is a convenience method for it:
 
- * makeSingleShot() - register an 'animationFrame' handler on this *Harmonizer* that stops the animation and requests a paint.
+ * makeSingleShot([handler]) - register an 'animationFrame' handler on this *Harmonizer* that stops the animation and calls the given handler function. If the handler function is not specified (as it is optional), the harmonizer will request a paint after stopping the animation.
+
+You should use some caution with *makeSingleShot()* when you pass it no arguments. Suppose, for instance, that you want a *Harmonizer* to buffer mouse movements and forward them to a view, v<sub>1</sub>, during each animation frame. If you do this inside a 'paint' handler, and if v<sub>1</sub> calls `requestPaint()` as a result, it will be in vain. Why? Because *Context* ignores paint requests when it is already painting. Thus, if you want to contact some other view on the next animation frame (e.g. to tell it about a mouse movement), you should specify your own handler to *makeSingleShot()* instead of using a 'paint' handler.
 
 # *Harmonizer* trees
 

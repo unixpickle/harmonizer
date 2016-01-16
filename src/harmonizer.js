@@ -93,11 +93,18 @@ Harmonizer.prototype.spawnChild = function() {
   return res;
 };
 
-Harmonizer.prototype.makeSingleShot = function() {
-  this.on('animationFrame', function() {
-    this.stop();
-    this.requestPaint();
-  }.bind(this));
+Harmonizer.prototype.makeSingleShot = function(handler) {
+  if ('undefined' === typeof handler) {
+    this.on('animationFrame', function() {
+      this.stop();
+      this.requestPaint();
+    }.bind(this));
+  } else {
+    this.on('animationFrame', function() {
+      this.stop();
+      handler();
+    }.bind(this));
+  }
 };
 
 Harmonizer.prototype._handleFrame = function(time) {
