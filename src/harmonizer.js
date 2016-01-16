@@ -22,6 +22,14 @@ Harmonizer.prototype.getContext = function() {
   return this._context;
 };
 
+Harmonizer.prototype.isAnimating = function() {
+  return this._animationState === ANIMATION_RUNNING;
+};
+
+Harmonizer.prototype.isPaused = function() {
+  return this._animationState === ANIMATION_PAUSED;
+};
+
 Harmonizer.prototype.start = function() {
   switch (this._animationState) {
   case ANIMATION_RUNNING:

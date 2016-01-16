@@ -62,6 +62,8 @@ The following methods on a *Harmonizer* can be used to control an animation:
  * start() - start or resume the animation. If an animation is already running, this will have no effect.
  * stop() - stop the current animation. If an animation is paused, it will be cancelled. If an animation is not running, this will have no effect.
  * pause() - pause the current animation. If no animation is running, this will have no effect.
+ * isAnimating() - returns true if the animation is currently running.
+ * isPaused() - returns true if the animation is currently paused.
 
 It is common to use a *Harmonizer*'s animation to paint a view once on the next animation frame. In this case, the 'animationFrame' handler might look something like this:
 
