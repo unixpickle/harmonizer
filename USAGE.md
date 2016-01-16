@@ -16,10 +16,10 @@ To import **harmonizer**, you must follow the [build instructions](README.md#bui
 The API automatically creates a default *Context*. You can access this as follows:
 
 ```js
-var context = window.harmonizer.defaultContext();
+var context = window.harmonizer.defaultContext;
 ```
 
-If you want to create a separate *Context*, you can do so like so:
+If you want to create a separate *Context*, you can do so like this:
 
 ```js
 var context = new window.harmonizer.Context();
