@@ -18,6 +18,10 @@ function Harmonizer(context) {
 Harmonizer.prototype = Object.create(EventEmitter.prototype);
 Harmonizer.prototype.constructor = Harmonizer;
 
+Harmonizer.prototype.getContext = function() {
+  return this._context;
+};
+
 Harmonizer.prototype.start = function() {
   switch (this._animationState) {
   case ANIMATION_RUNNING:
