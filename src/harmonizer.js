@@ -121,7 +121,18 @@ Harmonizer.prototype.makeSingleShot = function(handler) {
 
 Harmonizer.prototype._handleFrame = function(time) {
   assert(this._animationState === ANIMATION_RUNNING);
-  this.emit('animationFrame', time-this._animationStartTime+this._animationSkipTime);
+
+  if (time < this._animationStartTime) {
+    // This may occur in an edge case when the animation is started in a
+    // requestAnimationFrame() handler that was triggered right before the
+    // context's animation frame handler, since the same timestamp is passed
+    // to all requestAnimationFrame handlers even though Performance.now()
+    // might a bit ahead.
+    this._animationStartTime = time;
+  }
+
+  var elapsed = time - this._animationStartTime + this._animationSkipTime;
+  this.emit('animationFrame', elapsed);
 };
 
 Harmonizer.prototype._paint = function() {
